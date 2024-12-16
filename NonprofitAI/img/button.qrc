@@ -1,0 +1,12 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+<qresource prefix="/">
+    <file>project.png</file>
+    <file>trivia.png</file>
+    <file>image_recognition.png</file>
+    <file>cultural.png</file>
+    <file>bbs.png</file>
+    <file>more.png</file>
+    
+</qresource>
+</RCC>
