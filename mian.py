@@ -1,8 +1,13 @@
 # main.py
 
 import json
+import os
 import random
 from pathlib import Path
+
+# 降低 Qt WebEngine(Chromium) 的网络探测日志噪声。
+# 必须在 Qt 相关模块导入前设置。
+os.environ.setdefault("QTWEBENGINE_CHROMIUM_FLAGS", "--disable-logging --log-level=3")
 
 from PySide6.QtCore import Slot
 from PySide6.QtGui import QPixmap

@@ -3,7 +3,7 @@
 import base64
 import json
 import time
-import urllib
+from urllib.parse import quote_plus
 
 import requests
 
@@ -51,7 +51,7 @@ class AIImage:
         with path.open("rb") as f:
             content = base64.b64encode(f.read()).decode("utf8")
             if urlencoded:
-                content = urllib.parse.quote_plus(content)
+                content = quote_plus(content)
         return content
 
     def get_task_id(self, image_path):

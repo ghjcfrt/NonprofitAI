@@ -1,4 +1,3 @@
-#  __Personalized_Recommend__.py
 import json
 import random
 from collections import Counter
@@ -22,8 +21,10 @@ class PersonalizedRecommend:
         self.click_history_filename = click_history_filename
 
         # 初始化点击历史和非遗项目字典
-        self.click_history = self.load_from_json(self.click_history_filename)
-        if not isinstance(self.click_history, list):
+        loaded_history = self.load_from_json(self.click_history_filename)
+        if isinstance(loaded_history, list):
+            self.click_history = loaded_history
+        else:
             self.click_history = []
             self.save_to_json(self.click_history, self.click_history_filename)
 
@@ -60,71 +61,81 @@ class PersonalizedRecommend:
             self.click_history.pop(0)
         self.save_to_json(self.click_history, self.click_history_filename)
 
-    def recommend_based_on_history_or_category(self):
-        recommendations_by_category = []
-        if not self.click_history:  # 如果历史点击为空，直接进行随机推荐
-            recommendations_by_category = random.sample(list(self.project_dictionary.values()), 4)
-        else:
-            # 获取近十次点击的项目名称
-            recent_clicks = self.click_history[-10:]
+    def _sample_random_projects(self, limit):
+        projects = list(self.project_dictionary.values())
+        return random.sample(projects, min(limit, len(projects)))
 
-            # 获取每个项目对应的类别
-            categories = []
-            for proj_name in recent_clicks:
-                for proj in self.project_dictionary.values():
-                    if proj["名称"] == proj_name:
-                        categories.append(proj["类别"])
-                        break
+    def _collect_categories_from_recent_clicks(self):
+        recent_clicks = self.click_history[-history_num:]
+        categories = []
+        for proj_name in recent_clicks:
+            for proj in self.project_dictionary.values():
+                if proj["名称"] == proj_name:
+                    categories.append(proj["类别"])
+                    break
+        return categories
 
-            # 计算类别出现的频率
-            category_counts = Counter(categories)
-
-            # 获取类别出现的比例
-            total_clicks = len(categories)
-            category_weights = {category: count / total_clicks for category, count in category_counts.items()}
-
-            # 根据类别的比例进行推荐
-            for category, weight in category_weights.items():
-                # 获取该类别下所有的项目
-                category_projects = [proj for proj in self.project_dictionary.values() if proj["类别"] == category]
-
-                # 计算推荐数量，按比例推荐
-                num_recommendations = max(1, int(weight * 4))  # 至少推荐1个项目
-                recommendations_by_category.extend(
-                    random.sample(
-                        category_projects,
-                        min(num_recommendations, len(category_projects)),
-                    )
+    def _build_weighted_recommendations(self, category_weights):
+        recommendations = []
+        for category, weight in category_weights.items():
+            category_projects = [proj for proj in self.project_dictionary.values() if proj["类别"] == category]
+            num_recommendations = max(1, int(weight * commend_num))
+            recommendations.extend(
+                random.sample(
+                    category_projects,
+                    min(num_recommendations, len(category_projects)),
                 )
+            )
+        return recommendations
 
-            # 如果推荐项目数少于4，则从其他类别中补充
-            if len(recommendations_by_category) < commend_num:
-                additional_recommendations = [
-                    proj for proj in self.project_dictionary.values() if proj not in recommendations_by_category
-                ]
-                recommendations_by_category.extend(
-                    random.sample(
-                        additional_recommendations,
-                        min(
-                            4 - len(recommendations_by_category),
-                            len(additional_recommendations),
-                        ),
-                    )
-                )
+    def _fill_recommendations(self, recommendations):
+        if len(recommendations) >= commend_num:
+            return recommendations
 
-        # 返回项目序号和图片路径
+        additional_recommendations = [
+            proj for proj in self.project_dictionary.values() if proj not in recommendations
+        ]
+        recommendations.extend(
+            random.sample(
+                additional_recommendations,
+                min(commend_num - len(recommendations), len(additional_recommendations)),
+            )
+        )
+        return recommendations
+
+    def _attach_project_index_and_image(self, recommendations):
         recommendations_with_images = []
-        for proj in recommendations_by_category[:4]:  # 确保最多返回4个推荐项目
+        for proj in recommendations[:commend_num]:
             proj_name = proj["名称"]
 
-            # 查找对应名称的项目
             project_key = None
             for key, value in self.project_dictionary.items():
                 if value["名称"] == proj_name:
                     project_key = key
-                    break  # 找到后跳出循环
+                    break
 
-            project_index = int(project_key.replace("项目", ""))  # 从 key 提取项目编号
+            if project_key is None:
+                continue
+
+            project_index = int(project_key.replace("项目", ""))
             recommendations_with_images.append({"项目序号": f"项目{project_index}", "图片": proj.get("图片", "")})
 
         return recommendations_with_images
+
+    def recommend_based_on_history_or_category(self):
+        if not self.click_history:
+            recommendations = self._sample_random_projects(commend_num)
+            return self._attach_project_index_and_image(recommendations)
+
+        categories = self._collect_categories_from_recent_clicks()
+        if not categories:
+            recommendations = self._sample_random_projects(commend_num)
+            return self._attach_project_index_and_image(recommendations)
+
+        category_counts = Counter(categories)
+        total_clicks = len(categories)
+        category_weights = {category: count / total_clicks for category, count in category_counts.items()}
+
+        recommendations = self._build_weighted_recommendations(category_weights)
+        recommendations = self._fill_recommendations(recommendations)
+        return self._attach_project_index_and_image(recommendations)

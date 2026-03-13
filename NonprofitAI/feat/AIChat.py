@@ -35,6 +35,9 @@ class AIChat:
         """
         使用用户输入生成AI的回复，并更新对话历史。
         """
+        if not self.access_token:
+            return "抱歉，AI 服务暂时不可用，请稍后再试。"
+
         # 更新对话历史
         self.messages.append({"role": "user", "content": user_input})
 

@@ -1,9 +1,9 @@
 # config.py
 
 CHAT_API_KEY = ""
-CHAT_SECRET_KEY = ""  # noqa: S105
+CHAT_SECRET_KEY = ""
 IMAGE_API_KEY = ""
-IMAGE_SECRET_KEY = ""  # noqa: S105
+IMAGE_SECRET_KEY = ""
 URL = "https://aip.baidubce.com/oauth/2.0/token"
 CHAT_URL = "https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat/completions_pro?access_token="
 IMAGE_REQUEST_URL = "https://aip.baidubce.com/rest/2.0/image-classify/v1/image-understanding/request?access_token="
